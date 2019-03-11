@@ -1,0 +1,7 @@
+client/build
+node_modules/
+public/bundle
+server/render/build
+server/bundle
+test/
+server/chainquery

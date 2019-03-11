@@ -1,0 +1,40 @@
+{
+  "parser": "babel-eslint",
+  "extends": ["standard", "standard-jsx"],
+  "env": {
+    "es6": true,
+    "jest": true,
+    "node": true,
+    "browser": true
+  },
+  "globals": {
+    "GENTLY": true
+  },
+  "rules": {
+    "no-multi-spaces": 0,
+    "new-cap": 0,
+    "prefer-promise-reject-errors": 0,
+    "no-unused-vars": 0,
+    "standard/object-curly-even-spacing": 0,
+    "handle-callback-err": 0,
+    "one-var": 0,
+    "object-curly-spacing": 0,
+    "comma-dangle": ["error", "always-multiline"],
+    "semi": ["error", "always", { "omitLastInOneLineBlock": true }],
+    "key-spacing": [
+      "error",
+      {
+        "multiLine": {
+          "beforeColon": false,
+          "afterColon": true
+        },
+        "align": {
+          "beforeColon": false,
+          "afterColon": true,
+          "on": "colon",
+          "mode": "strict"
+        }
+      }
+    ]
+  }
+}

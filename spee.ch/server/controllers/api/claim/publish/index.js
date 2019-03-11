@@ -1,0 +1,197 @@
+const logger = require('winston');
+
+const {
+  details: { host },
+  publishing: { disabled, disabledMessage },
+} = require('@config/siteConfig');
+
+const { sendGATimingEvent } = require('server/utils/googleAnalytics.js');
+const isApprovedChannel = require('@globalutils/isApprovedChannel');
+const {
+  publishing: { publishOnlyApproved, approvedChannels },
+} = require('@config/siteConfig');
+
+const { handleErrorResponse } = require('../../../utils/errorHandlers.js');
+
+const checkClaimAvailability = require('../availability/checkClaimAvailability.js');
+
+const publish = require('./publish.js');
+const createPublishParams = require('./createPublishParams.js');
+const createThumbnailPublishParams = require('./createThumbnailPublishParams.js');
+const parsePublishApiRequestBody = require('./parsePublishApiRequestBody.js');
+const parsePublishApiRequestFiles = require('./parsePublishApiRequestFiles.js');
+const authenticateUser = require('./authentication.js');
+
+const chainquery = require('chainquery').default;
+const createCanonicalLink = require('@globalutils/createCanonicalLink');
+
+const CLAIM_TAKEN = 'CLAIM_TAKEN';
+const UNAPPROVED_CHANNEL = 'UNAPPROVED_CHANNEL';
+
+/*
+
+  route to publish a claim through the daemon
+
+*/
+
+const claimPublish = ({ body, files, headers, ip, originalUrl, user, tor }, res) => {
+  // logging
+  logger.info('Publish request:', {
+    ip,
+    headers,
+    body,
+    files,
+  });
+  // check for disabled publishing
+  if (disabled) {
+    return res.status(503).json({
+      success: false,
+      message: disabledMessage,
+    });
+  }
+  // define variables
+  let channelName,
+    channelId,
+    channelPassword,
+    description,
+    fileName,
+    filePath,
+    fileExtension,
+    fileType,
+    gaStartTime,
+    license,
+    licenseUrl,
+    name,
+    nsfw,
+    thumbnail,
+    thumbnailFileName,
+    thumbnailFilePath,
+    thumbnailFileType,
+    title,
+    claimData,
+    claimId;
+  // record the start time of the request
+  gaStartTime = Date.now();
+  // validate the body and files of the request
+  try {
+    // validateApiPublishRequest(body, files);
+    ({
+      name,
+      nsfw,
+      license,
+      licenseUrl,
+      title,
+      description,
+      thumbnail,
+    } = parsePublishApiRequestBody(body));
+    ({
+      fileName,
+      filePath,
+      fileExtension,
+      fileType,
+      thumbnailFileName,
+      thumbnailFilePath,
+      thumbnailFileType,
+    } = parsePublishApiRequestFiles(files));
+    ({ channelName, channelId, channelPassword } = body);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+  // check channel authorization
+  authenticateUser(channelName, channelId, channelPassword, user)
+    .then(({ channelName, channelClaimId }) => {
+      if (publishOnlyApproved && !isApprovedChannel({ longId: channelClaimId }, approvedChannels)) {
+        const error = {
+          name: UNAPPROVED_CHANNEL,
+          message: 'This spee.ch instance only allows publishing to approved channels',
+        };
+        throw error;
+      }
+
+      return Promise.all([
+        checkClaimAvailability(name),
+        createPublishParams(
+          filePath,
+          name,
+          title,
+          description,
+          license,
+          licenseUrl,
+          nsfw,
+          thumbnail,
+          channelName,
+          channelClaimId
+        ),
+        createThumbnailPublishParams(thumbnailFilePath, name, license, licenseUrl, nsfw),
+      ]);
+    })
+    .then(([claimAvailable, publishParams, thumbnailPublishParams]) => {
+      if (!claimAvailable) {
+        const error = {
+          name: CLAIM_TAKEN,
+          message: 'That claim name is already taken',
+        };
+        throw error;
+      }
+      // publish the thumbnail, if one exists
+      if (thumbnailPublishParams) {
+        publish(thumbnailPublishParams, thumbnailFileName, thumbnailFileType);
+      }
+      // publish the asset
+      return publish(publishParams, fileName, fileType, filePath);
+    })
+    .then(publishResults => {
+      logger.info('Publish success >', publishResults);
+      claimData = publishResults;
+      ({ claimId } = claimData);
+
+      if (channelName) {
+        logger.info(`api/claim/publish: claimData.certificateId ${claimData.certificateId}`);
+        return chainquery.claim.queries.getShortClaimIdFromLongClaimId(
+          claimData.certificateId,
+          channelName
+        );
+      } else {
+        return chainquery.claim.queries
+          .getShortClaimIdFromLongClaimId(claimId, name, claimData)
+          .catch(() => {
+            return claimId.slice(0, 1);
+          });
+      }
+    })
+    .then(shortId => {
+      let canonicalUrl;
+      if (channelName) {
+        canonicalUrl = createCanonicalLink({ asset: { ...claimData, channelShortId: shortId } });
+      } else {
+        canonicalUrl = createCanonicalLink({ asset: { ...claimData, shortId } });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'publish completed successfully',
+        data: {
+          name,
+          claimId,
+          url: `${host}${canonicalUrl}`, // for backwards compatability with app
+          showUrl: `${host}${canonicalUrl}`,
+          serveUrl: `${host}${canonicalUrl}${fileExtension}`,
+          pushTo: canonicalUrl,
+          claimData,
+        },
+      });
+      // record the publish end time and send to google analytics
+      sendGATimingEvent('end-to-end', 'publish', fileType, gaStartTime, Date.now());
+    })
+    .catch(error => {
+      if ([CLAIM_TAKEN, UNAPPROVED_CHANNEL].includes(error.name)) {
+        res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+      handleErrorResponse(originalUrl, ip, error, res);
+    });
+};
+
+module.exports = claimPublish;

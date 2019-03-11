@@ -1,0 +1,20 @@
+a, a:visited {
+  text-decoration: none;
+}
+
+.link--primary, .link--primary:visited {
+  color: $primary-color;
+  &:hover { text-decoration: underline; }
+}
+
+.link--nav {
+  color: $text-color;
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+
+.link--nav-active {
+  border-bottom: 2px solid $primary-color;
+}

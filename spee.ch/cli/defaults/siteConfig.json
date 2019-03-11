@@ -1,0 +1,112 @@
+{
+  "analytics": {
+    "googleId": null
+  },
+  "assetDefaults": {
+    "title": "Default Content Title",
+    "description": "Default Content Description",
+    "thumbnail": "https://spee.ch/0e5d4e8f4086e13f5b9ca3f9648f518e5f524402/speechflag.png"
+  },
+  "auth": {
+    "sessionKey": "mysecretkeyword",
+    "masterPassword": "myMasterPassword"
+  },
+  "details": {
+    "port": 3000,
+    "title": "My Site",
+    "ipAddress": "",
+    "host": "https://www.example.com",
+    "description": "A decentralized hosting platform built on LBRY",
+    "twitter": false,
+    "blockListEndpoint": "https://api.lbry.io/file/list_blocked"
+  },
+  "publishing": {
+    "primaryClaimAddress": null,
+    "uploadDirectory": "/home/lbry/Uploads",
+    "lbrynetHome": "/CURRENTLYUNUSED",
+    "thumbnailChannel": null,
+    "thumbnailChannelId": null,
+    "additionalClaimAddresses": [],
+    "disabled": false,
+    "disabledMessage": "Default publishing disabled message",
+    "closedRegistration": false,
+    "serveOnlyApproved": false,
+    "publishOnlyApproved": false,
+    "approvedChannels": [],
+    "publishingChannelWhitelist": [],
+    "channelClaimBidAmount": "0.1",
+    "fileClaimBidAmount": "0.01",
+    "fileSizeLimits": {
+      "image": 50000000,
+      "video": 50000000,
+      "audio": 50000000,
+      "text": 50000000,
+      "model": 50000000,
+      "application": 50000000,
+      "customByContentType": {
+        "application/octet-stream": 50000000
+      }
+    }
+  },
+  "serving": {
+    "dynamicFileSizing": {
+      "enabled": true,
+      "maxDimension": 2000
+    },
+    "markdownSettings": {
+      "skipHtmlMain": true,
+      "escapeHtmlMain": true,
+      "skipHtmlDescriptions": true,
+      "escapeHtmlDescriptions": true,
+      "allowedTypesMain": [],
+      "allowedTypesDescriptions": [],
+      "allowedTypesExample": [
+        "see react-markdown docs",
+        "root",
+        "text",
+        "break",
+        "paragraph",
+        "emphasis",
+        "strong",
+        "thematicBreak",
+        "blockquote",
+        "delete",
+        "link",
+        "image",
+        "linkReference",
+        "imageReference",
+        "table",
+        "tableHead",
+        "tableBody",
+        "tableRow",
+        "tableCell",
+        "list",
+        "listItem",
+        "heading",
+        "inlineCode",
+        "code",
+        "html",
+        "parsedHtml"
+      ]
+    },
+    "customFileExtensions": {
+      "application/x-troff-man": "man",
+      "application/x-troff-me": "me",
+      "application/x-mif": "mif",
+      "application/x-troff-ms": "ms",
+      "application/x-troff": "roff",
+      "application/x-python-code": "pyc",
+      "text/x-python": "py",
+      "application/x-pn-realaudio": "ram",
+      "application/x-sgml": "sgm",
+      "model/stl": "stl",
+      "image/pict": "pct",
+      "text/xul": "xul",
+      "text/x-go": "go"
+    }
+  },
+  "startup": {
+    "performChecks": true,
+    "performUpdates": true
+  }
+}
